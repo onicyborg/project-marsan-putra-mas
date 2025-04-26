@@ -544,6 +544,27 @@
         </script>
     @endif
 
+    @if (session('error'))
+        <script>
+            $.notify({
+                message: '{{ session('error') }}',
+                icon: 'fa fa-times'
+            }, {
+                type: 'error',
+                placement: {
+                    from: 'bottom',
+                    align: 'right'
+                },
+                delay: 5000, // Notifikasi akan hilang setelah 5 detik
+                z_index: 1050,
+                animate: {
+                    enter: 'animated fadeInUp',
+                    exit: 'animated fadeOutDown'
+                }
+            });
+        </script>
+    @endif
+
     @if ($errors->any())
         <script>
             $.notify({

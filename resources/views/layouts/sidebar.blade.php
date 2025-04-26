@@ -23,7 +23,7 @@
                 <div class="collapse" id="base">
                     <ul class="nav nav-collapse">
                         <li>
-                            <a href="/member">
+                            <a href="/members">
                                 <span class="sub-item">Member</span>
                             </a>
                         </li>
