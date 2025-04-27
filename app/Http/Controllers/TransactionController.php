@@ -99,4 +99,39 @@ class TransactionController extends Controller
             return response()->json('<div class="text-danger">Failed to load details.</div>', 500);
         }
     }
+
+    public function pay_transaction(Request $request)
+    {
+        // Validasi input
+        $request->validate([
+            'transaction_id' => 'required|exists:transactions,id',
+            'payment_method' => 'required|in:cash,gateway',
+        ]);
+
+        // Cari transaksi
+        $transaction = Transaction::findOrFail($request->transaction_id);
+
+        if ($request->payment_method == 'cash') {
+            $transaction->status = 'Success';
+            $transaction->payment_method = 'Cash';
+            $transaction->save();
+        }else{
+
+        }
+
+
+        return redirect()->back()->with('success', 'Transaction successfully updated.');
+    }
+
+    public function cancel_transaction($id)
+    {
+        // Cari transaksi
+        $transaction = Transaction::findOrFail($id);
+
+        // Ubah status transaksi menjadi Cancel
+        $transaction->status = 'Cancel';
+        $transaction->save();
+
+        return redirect()->back()->with('success', 'Transaction successfully canceled.');
+    }
 }

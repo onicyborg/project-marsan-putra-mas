@@ -4,6 +4,10 @@
     Manage Transaction
 @endsection
 
+@push('styles')
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+@endpush
+
 @section('content')
     <div class="page-inner">
         <div class="d-flex align-items-start flex-column flex-md-row pt-2 pb-4">
@@ -30,9 +34,10 @@
                     <table class="table table-striped" id="table-pending">
                         <thead>
                             <tr>
-                                <th>Order ID</th>
+                                <th>ID</th>
                                 <th>Customer</th>
                                 <th>Total</th>
+                                <th>Transaction Time</th>
                                 <th>Status</th>
                                 <th>Action</th>
                             </tr>
@@ -43,11 +48,12 @@
                                     <td>{{ $item->id }}</td>
                                     <td>{{ $item->user_id ? $item->user->name : $item->customer_name }}</td>
                                     <td>Rp. {{ number_format($item->gross_amount) }}</td>
+                                    <td>{{ $item->created_at->format('d/m/Y - H:i') }}</td>
                                     <td>
                                         <span class="badge bg-warning">Pending</span>
                                     </td>
                                     <td class="text-center">
-                                        <button class="btn btn-sm btn-info btn-expand" data-id="{{ $item->id }}"
+                                        <button class="btn btn-sm btn-info btn-expand-pending" data-id="{{ $item->id }}"
                                             title="View Detail">
                                             <i class="fas fa-chevron-down"></i>
                                         </button>
@@ -64,13 +70,6 @@
                                     </td>
 
                                 </tr>
-                                {{-- <tr class="expand-row" id="expand-{{ $item->id }}" style="display: none;">
-                                    <td colspan="5">
-                                        <div class="detail-transaction">
-                                            Loading...
-                                        </div>
-                                    </td>
-                                </tr> --}}
                             @endforeach
                         </tbody>
                     </table>
@@ -85,18 +84,43 @@
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <div class="row mb-3">
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <input type="month" id="filter-month" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                    <table class="table table-striped" id="table-success">
                         <thead>
                             <tr>
-                                <th>Order ID</th>
+                                <th>ID</th>
                                 <th>Customer</th>
                                 <th>Total</th>
-                                <th>Status</th>
                                 <th>Transaction Time</th>
+                                <th>Status</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {{-- Data transaksi selesai dimasukkan di sini --}}
+                            @foreach ($transactions_success as $item)
+                                <tr>
+                                    <td>{{ $item->id }}</td>
+                                    <td>{{ $item->user_id ? $item->user->name : $item->customer_name }}</td>
+                                    <td>Rp. {{ number_format($item->gross_amount) }}</td>
+                                    <td>{{ $item->created_at->format('d/m/Y - H:i') }}</td>
+                                    <td>
+                                        <span class="badge bg-success">Success</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-info btn-expand-success"
+                                            data-id="{{ $item->id }}" title="View Detail">
+                                            <i class="fas fa-chevron-down"></i>
+                                        </button>
+                                    </td>
+
+                                </tr>
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
@@ -110,18 +134,35 @@
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="table table-striped" id="table-unsuccess">
                         <thead>
                             <tr>
-                                <th>Order ID</th>
+                                <th>ID</th>
                                 <th>Customer</th>
                                 <th>Total</th>
-                                <th>Status</th>
                                 <th>Transaction Time</th>
+                                <th>Status</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {{-- Data transaksi Tidak Selesa dimasukkan di sini --}}
+                            @foreach ($unsuccessfulTransactions as $item)
+                                <tr>
+                                    <td>{{ $item->id }}</td>
+                                    <td>{{ $item->user_id ? $item->user->name : $item->customer_name }}</td>
+                                    <td>Rp. {{ number_format($item->gross_amount) }}</td>
+                                    <td>{{ $item->created_at->format('d/m/Y - H:i') }}</td>
+                                    <td>
+                                        <span class="badge bg-danger">Cancel</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-info btn-expand-unsuccess"
+                                            data-id="{{ $item->id }}" title="View Detail">
+                                            <i class="fas fa-chevron-down"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
@@ -226,6 +267,7 @@
         <div class="modal-dialog">
             <form id="paymentForm" action="/pay-transaction" method="POST">
                 @csrf
+                @method('PUT')
                 <input type="hidden" name="transaction_id" value="">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -255,7 +297,7 @@
             <div class="modal-content">
                 <form id="cancelForm" method="POST" action="">
                     @csrf
-                    @method('POST')
+                    @method('PUT')
                     <div class="modal-header">
                         <h5 class="modal-title" id="cancelModalLabel">Cancel Transaction</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -274,6 +316,9 @@
 @endsection
 
 @push('scripts')
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
     <script>
         $(document).ready(function() {
 
@@ -418,12 +463,12 @@
         });
 
         $(document).ready(function() {
-            var table = $('#table-pending').DataTable();
+            var table_pending = $('#table-pending').DataTable();
 
             // Delegasi tombol expand
-            $('#table-pending tbody').on('click', '.btn-expand', function() {
+            $('#table-pending tbody').on('click', '.btn-expand-pending', function() {
                 var tr = $(this).closest('tr');
-                var row = table.row(tr);
+                var row = table_pending.row(tr);
 
                 if (row.child.isShown()) {
                     // Close jika sudah terbuka
@@ -466,6 +511,105 @@
                 // Set action form ke route cancel
                 $('#cancelForm').attr('action', '/cancel-transaction/' + id);
                 $('#cancelModal').modal('show');
+            });
+
+            $(document).ready(function() {
+                var table_success = $('#table-success').DataTable({
+                    dom: 'Bfrtip',
+                    buttons: [{
+                        extend: 'excel',
+                        text: 'Export to Excel',
+                        className: 'btn btn-info mb-3'
+                    }],
+                    order: [
+                        [3, 'desc']
+                    ], // Sort default by Transaction Time
+                });
+
+                // Filter by month
+                $('#filter-month').on('change', function() {
+                    var selected = $(this).val(); // format "2025-04"
+
+                    if (selected) {
+                        var parts = selected.split('-'); // [2025, 04]
+                        var year = parts[0];
+                        var month = parts[1];
+
+                        // Karena tanggal di tabel formatnya 'd/m/Y - H:i'
+                        // kita buat regex cari '/mm/yyyy' di string
+                        var search = month + '/' + year;
+
+                        table_success.column(3).search(search).draw();
+                    } else {
+                        table_success.column(3).search('').draw();
+                    }
+                });
+
+
+                // Delegasi tombol expand
+                $('#table-success tbody').on('click', '.btn-expand-success', function() {
+                    var tr = $(this).closest('tr');
+                    var row = table_success.row(tr);
+
+                    if (row.child.isShown()) {
+                        row.child.hide();
+                        tr.removeClass('shown');
+                    } else {
+                        row.child('<div class="p-3 text-center">Loading...</div>').show();
+                        tr.addClass('shown');
+
+                        var id = $(this).data('id');
+
+                        $.ajax({
+                            url: '/get-detail-transaction/' + id,
+                            method: 'GET',
+                            success: function(response) {
+                                row.child('<div class="p-3">' + response + '</div>')
+                                    .show();
+                            },
+                            error: function() {
+                                row.child(
+                                    '<div class="p-3 text-danger">Failed to load details.</div>'
+                                ).show();
+                            }
+                        });
+                    }
+                });
+            });
+
+            var table_unsuccess = $('#table-unsuccess').DataTable();
+
+            // Delegasi tombol expand
+            $('#table-unsuccess tbody').on('click', '.btn-expand-unsuccess', function() {
+                var tr = $(this).closest('tr');
+                var row = table_unsuccess.row(tr);
+
+                if (row.child.isShown()) {
+                    // Close jika sudah terbuka
+                    row.child.hide();
+                    tr.removeClass('shown');
+                } else {
+                    // Loading text
+                    row.child('<div class="p-3 text-center">Loading...</div>').show();
+                    tr.addClass('shown');
+
+                    // Ambil id
+                    var id = $(this).data('id');
+
+                    // AJAX untuk ambil detail
+                    $.ajax({
+                        url: '/get-detail-transaction/' + id,
+                        method: 'GET',
+                        success: function(response) {
+                            row.child('<div class="p-3">' + response + '</div>').show();
+                        },
+                        error: function() {
+                            row.child(
+                                '<div class="p-3 text-danger">Failed to load details.</div>'
+                            ).show();
+                        }
+                    });
+                }
             });
 
         });

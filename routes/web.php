@@ -48,6 +48,7 @@ Route::get('/profile', function () {
 })->middleware('auth');
 
 Route::put('/update-profile', [AuthController::class, 'update'])->middleware('auth');
+Route::put('/change-password', [AuthController::class, 'changePassword'])->middleware('auth');
 
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
@@ -62,6 +63,8 @@ Route::group(['middleware' => 'role:admin'], function () {
     Route::get('/get-member-by-number/{phone}', [MemberController::class, 'getMemberByNumber'])->name('get-member-by-number');
     Route::post('/transaction', [TransactionController::class, 'store'])->name('transaction.store');
     Route::get('/get-detail-transaction/{id}', [TransactionController::class, 'getDetailTransaction']);
+    Route::put('/pay-transaction', [TransactionController::class, 'pay_transaction'])->name('transaction.pay');
+    Route::put('/cancel-transaction/{id}', [TransactionController::class, 'cancel_transaction'])->name('transaction.cancel');
 
 });
 
