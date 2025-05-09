@@ -50,7 +50,11 @@
                                     <td>Rp. {{ number_format($item->gross_amount) }}</td>
                                     <td>{{ $item->created_at->format('d/m/Y - H:i') }}</td>
                                     <td>
-                                        <span class="badge bg-warning">Pending</span>
+                                        @if ($item->status == 'Failed')
+                                            <span class="badge bg-danger">Failed</span>
+                                        @else
+                                            <span class="badge bg-warning">Pending</span>
+                                        @endif
                                     </td>
                                     <td class="text-center">
                                         <button class="btn btn-sm btn-info btn-expand-pending" data-id="{{ $item->id }}"
@@ -59,7 +63,7 @@
                                         </button>
 
                                         <button class="btn btn-sm btn-success btn-pay" data-id="{{ $item->id }}"
-                                            title="Payment">
+                                            data-snapToken="{{ $item->snap_token }}" title="Payment">
                                             <i class="fas fa-money-bill-wave"></i>
                                         </button>
 
@@ -68,7 +72,6 @@
                                             <i class="fas fa-times"></i>
                                         </button>
                                     </td>
-
                                 </tr>
                             @endforeach
                         </tbody>
@@ -265,26 +268,27 @@
     <!-- Payment Modal -->
     <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <form id="paymentForm" action="/pay-transaction" method="POST">
+            <form id="paymentForm" method="POST">
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="transaction_id" value="">
+                <input type="hidden" name="snap_token" value="">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="paymentModalLabel">Choose Payment Method</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <h5 class="modal-title">Choose Payment Method</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label">Payment Method</label>
-                            <select name="payment_method" class="form-control" required>
+                            <select name="payment_method" class="form-control" id="payment_method" required>
                                 <option value="cash">Cash</option>
-                                <option value="gateway">Transfer (Payment Gateway)</option>
+                                <option value="gateway">Transfer / QRIS (Midtrans)</option>
                             </select>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-primary">Pay</button>
+                        <button type="button" class="btn btn-primary" id="btn-pay-submit">Pay</button>
                     </div>
                 </div>
             </form>
@@ -499,11 +503,13 @@
             });
 
             // Delegasi tombol Payment
-            $('#table-pending tbody').on('click', '.btn-pay', function() {
-                var id = $(this).data('id');
-                $('#paymentModal').find('input[name="transaction_id"]').val(id);
-                $('#paymentModal').modal('show');
-            });
+            // $('#table-pending tbody').on('click', '.btn-pay', function() {
+            //     var id = $(this).data('id');
+            //     var snap_token = $(this).data('snapToken');
+            //     $('#paymentModal').find('input[name="transaction_id"]').val(id);
+            //     $('#paymentModal').find('input[name="snap_token"]').val(snap_token);
+            //     $('#paymentModal').modal('show');
+            // });
 
             // Handle Cancel Button
             $('.btn-cancel').on('click', function() {
@@ -612,6 +618,104 @@
                 }
             });
 
+        });
+    </script>
+    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}">
+    </script>
+    <script>
+        $(document).ready(function() {
+            $('#table-pending tbody').on('click', '.btn-pay', function() {
+                let id = $(this).data('id');
+                let snap_token = $(this).data('snaptoken');
+                $('#paymentModal input[name="transaction_id"]').val(id);
+                $('#paymentModal input[name="snap_token"]').val(snap_token);
+                $('#paymentModal').modal('show');
+            });
+
+            $('#btn-pay-submit').on('click', function() {
+                let method = $('#payment_method').val();
+                let snapToken = $('input[name="snap_token"]').val();
+                let transactionId = $('input[name="transaction_id"]').val();
+
+                if (method === 'cash') {
+                    // Submit form secara langsung
+                    $('#paymentForm').attr('action', '/pay-transaction').submit();
+                } else if (method === 'gateway') {
+                    // Jalankan Midtrans Snap
+                    snap.pay(snapToken, {
+                        onSuccess: function(result) {
+                            // Simpan hasil ke server, atau redirect jika perlu
+                            console.log('Success:', result);
+                            sendPaymentResult(result, transactionId);
+                        },
+                        onPending: function(result) {
+                            console.log('Pending:', result);
+                            sendPaymentResult(result, transactionId);
+                        },
+                        onError: function(result) {
+                            console.log('Error:', result);
+                            alert('Payment failed. Please try again.');
+                        }
+                    });
+                }
+            });
+
+            function sendPaymentResult(result, transactionId) {
+                // Kirim hasil ke backend via AJAX
+                $.ajax({
+                    url: '/pay-transaction',
+                    method: 'PUT',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    data: {
+                        // _method: 'PUT',
+                        transaction_id: transactionId,
+                        snap_result: JSON.stringify(result),
+                        payment_method: 'gateway'
+                    },
+                    success: function(response) {
+                        $.notify({
+                            message: 'Pembayaran berhasil diproses.',
+                            icon: 'fa fa-check'
+                        }, {
+                            type: 'success',
+                            placement: {
+                                from: 'bottom',
+                                align: 'right'
+                            },
+                            delay: 5000,
+                            z_index: 1050,
+                            animate: {
+                                enter: 'animated fadeInUp',
+                                exit: 'animated fadeOutDown'
+                            }
+                        });
+
+                        setTimeout(function() {
+                            location.reload();
+                        }, 2000); // tunggu 2 detik sebelum reload
+                    },
+                    error: function(xhr) {
+                        $.notify({
+                            message: 'Terjadi kesalahan saat mengirim data pembayaran.',
+                            icon: 'fa fa-times'
+                        }, {
+                            type: 'danger',
+                            placement: {
+                                from: 'bottom',
+                                align: 'right'
+                            },
+                            delay: 5000,
+                            z_index: 1050,
+                            animate: {
+                                enter: 'animated fadeInUp',
+                                exit: 'animated fadeOutDown'
+                            }
+                        });
+                    }
+                });
+            }
         });
     </script>
 @endpush
