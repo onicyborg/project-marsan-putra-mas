@@ -191,6 +191,12 @@ class TransactionController extends Controller
     {
         $payload = $request->all();
 
+        // Jika order_id mengandung "payment_notif_test", langsung return sukses
+        if (strpos($payload['order_id'], 'payment_notif_test') !== false) {
+            return response()->json(['message' => 'Test callback accepted.'], 200);
+        }
+
+        // Proses normal
         $transaction = Transaction::where('order_id', $payload['order_id'])->first();
         if (!$transaction) return response()->json(['error' => 'Transaction not found'], 404);
 
@@ -206,6 +212,6 @@ class TransactionController extends Controller
 
         $transaction->save();
 
-        return response()->json(['message' => 'Callback received.']);
+        return response()->json(['message' => 'Callback received.'], 200);
     }
 }
