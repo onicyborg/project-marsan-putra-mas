@@ -6,6 +6,24 @@
 
 @push('styles')
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+    <style>
+        #table-success.table {
+            font-size: 0.875em;
+        }
+        #table-success.table thead th {
+            font-size: 0.875em;
+        }
+        #table-success.table tbody td {
+            font-size: 0.875em;
+        }
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_processing,
+        .dataTables_wrapper .dataTables_paginate {
+            font-size: 0.875em;
+        }
+    </style>
 @endpush
 
 @section('content')
@@ -101,6 +119,7 @@
                                 <th>Customer</th>
                                 <th>Total</th>
                                 <th>Transaction Time</th>
+                                <th>Payment Time</th>
                                 <th>Status</th>
                                 <th>Action</th>
                             </tr>
@@ -112,6 +131,7 @@
                                     <td>{{ $item->user_id ? $item->user->name : $item->customer_name }}</td>
                                     <td>Rp. {{ number_format($item->gross_amount) }}</td>
                                     <td>{{ $item->created_at->format('d/m/Y - H:i') }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($item->transaction_time)->format('d/m/Y - H:i') }}</td>
                                     <td>
                                         <span class="badge bg-success">Success</span>
                                     </td>

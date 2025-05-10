@@ -145,6 +145,7 @@ class TransactionController extends Controller
         if ($request->payment_method == 'cash') {
             $transaction->status = 'Success';
             $transaction->payment_method = 'Cash';
+            $transaction->transaction_time = now();
             $transaction->save();
             return redirect()->back()->with('success', 'Transaction successfully updated.');
         } else {
@@ -154,6 +155,7 @@ class TransactionController extends Controller
             // Ambil status dari Midtrans response
             $snapResult = json_decode($request->snap_result);
             $midtransStatus = $snapResult->transaction_status ?? 'pending';
+            $transaction->transaction_time = $snapResult->transaction_time ?? now();
 
             if (in_array($midtransStatus, ['settlement', 'capture'])) {
                 $transaction->status = 'Success';
