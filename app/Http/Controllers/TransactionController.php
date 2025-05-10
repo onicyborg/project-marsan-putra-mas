@@ -74,7 +74,8 @@ class TransactionController extends Controller
             $transaction->gross_amount = $grossAmount;
 
             // Set your Merchant Server Key
-            \Midtrans\Config::$serverKey = config('midtrans.serverkey');
+            \Midtrans\Config::$serverKey = config('midtrans.server_key');
+            \Midtrans\Config::$clientKey = config('midtrans.client_key');
             // Set to Development/Sandbox Environment (default). Set to true for Production Environment (accept real transaction).
             \Midtrans\Config::$isProduction = config('midtrans.isProduction');
             // Set sanitization on (default)
