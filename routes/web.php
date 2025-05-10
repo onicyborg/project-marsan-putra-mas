@@ -51,6 +51,7 @@ Route::put('/update-profile', [AuthController::class, 'update'])->middleware('au
 Route::put('/change-password', [AuthController::class, 'changePassword'])->middleware('auth');
 
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::post('/midtrans/callback', [TransactionController::class, 'handleCallback']);
 
 
 Route::group(['middleware' => 'role:admin'], function () {

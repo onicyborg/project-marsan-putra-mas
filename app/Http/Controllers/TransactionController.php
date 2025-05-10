@@ -156,6 +156,7 @@ class TransactionController extends Controller
             $snapResult = json_decode($request->snap_result);
             $midtransStatus = $snapResult->transaction_status ?? 'pending';
             $transaction->transaction_time = $snapResult->transaction_time ?? now();
+            $transaction->order_id = $snapResult->order_id ?? null;
 
             if (in_array($midtransStatus, ['settlement', 'capture'])) {
                 $transaction->status = 'Success';
@@ -184,5 +185,27 @@ class TransactionController extends Controller
         $transaction->save();
 
         return redirect()->back()->with('success', 'Transaction successfully canceled.');
+    }
+
+    public function handleCallback(Request $request)
+    {
+        $payload = $request->all();
+
+        $transaction = Transaction::where('order_id', $payload['order_id'])->first();
+        if (!$transaction) return response()->json(['error' => 'Transaction not found'], 404);
+
+        $status = $payload['transaction_status'];
+
+        if (in_array($status, ['settlement', 'capture'])) {
+            $transaction->status = 'Success';
+        } elseif ($status === 'pending') {
+            $transaction->status = 'Pending';
+        } else {
+            $transaction->status = 'Failed';
+        }
+
+        $transaction->save();
+
+        return response()->json(['message' => 'Callback received.']);
     }
 }
