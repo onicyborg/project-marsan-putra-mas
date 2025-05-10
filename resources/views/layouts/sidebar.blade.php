@@ -51,7 +51,7 @@
             </li>
 
             <li class="nav-item">
-                <a href="/">
+                <a href="/transaction">
                     <i class="fas fa-layer-group"></i>
                     <p>Transaksi</p>
                 </a>

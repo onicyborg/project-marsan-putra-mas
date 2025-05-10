@@ -5,22 +5,36 @@ namespace App\Http\Controllers;
 use App\Models\DetailTransaction;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class TransactionController extends Controller
 {
     public function index()
     {
-        // Ambil semua transaksi dari database
-        $transactions_pending = Transaction::whereIn('status', ['Pending', 'Failed'])->get();
-        $transactions_success = Transaction::where('status', 'Success')->get();
-        $unsuccessfulTransactions = Transaction::where('status', '!=', 'Success')
-            ->where('status', '!=', 'Pending')
-            ->where('status', '!=', 'Failed')
-            ->get();
+        if (Auth::user()->role == 'admin') {
+            // Ambil semua transaksi dari database
+            $transactions_pending = Transaction::whereIn('status', ['Pending', 'Failed'])->get();
+            $transactions_success = Transaction::where('status', 'Success')->get();
+            $unsuccessfulTransactions = Transaction::where('status', '!=', 'Success')
+                ->where('status', '!=', 'Pending')
+                ->where('status', '!=', 'Failed')
+                ->get();
 
-        // Tampilkan halaman transaksi dengan data transaksi
-        return view('admin.transaction', compact('transactions_pending', 'transactions_success', 'unsuccessfulTransactions'));
+            // Tampilkan halaman transaksi dengan data transaksi
+            return view('admin.transaction', compact('transactions_pending', 'transactions_success', 'unsuccessfulTransactions'));
+        } else {
+            // Ambil semua transaksi dari database
+            $transactions_pending = Transaction::where('user_id', Auth::user()->id)->whereIn('status', ['Pending', 'Failed'])->get();
+            $transactions_success = Transaction::where('user_id', Auth::user()->id)->where('status', 'Success')->get();
+            $unsuccessfulTransactions = Transaction::where('user_id', Auth::user()->id)->where('status', '!=', 'Success')
+                ->where('status', '!=', 'Pending')
+                ->where('status', '!=', 'Failed')
+                ->get();
+
+            // Tampilkan halaman transaksi dengan data transaksi
+            return view('user.transaction', compact('transactions_pending', 'transactions_success', 'unsuccessfulTransactions'));
+        }
     }
 
     public function store(Request $request)
