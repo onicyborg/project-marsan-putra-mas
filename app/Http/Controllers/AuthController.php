@@ -35,7 +35,7 @@ class AuthController extends Controller
         ]);
 
         // Redirect ke login
-        return redirect()->route('login.get')->with('success', 'Registration successful. Please login.');
+        return redirect()->route('login')->with('success', 'Registration successful. Please login.');
     }
 
     public function login(Request $request)
